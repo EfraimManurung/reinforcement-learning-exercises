@@ -1,7 +1,7 @@
 # reinforcement-learning-exercises
 Efraim Manurung <br />
 Information Technology Group, Wageningen University <br />
-efraim.manurung@gmail.com
+efraim.manurung@gmail.com <br />
 efraim.efraimpartoginahotasi@gmai.com
 
 - Learning sources
