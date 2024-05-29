@@ -11,14 +11,14 @@ Main program
 '''
 
 # Import supporting libraries
+import numpy as np
 import sys
 import os
 import time
 
 # Import libraries needed for PPO algorithm
-from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.algorithms.dqn.dqn import DQNConfig, DQN
 
-# Import libraries
 from classes.FrozenPond import FrozenPond
 
 # Set the console encoding to UTF-8
@@ -30,17 +30,24 @@ if os.name == 'nt':
 def clear_output():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+config = DQNConfig()
 
-# RL Configuration and Training
-config = (
-    PPOConfig().environment(
+replay_config = {
+        "type": "MultiAgentPrioritizedReplayBuffer",
+        "capacity": 60000,
+        "prioritized_replay_alpha": 0.5,
+        "prioritized_replay_beta": 0.5,
+        "prioritized_replay_eps": 3e-6,
+    }
+
+config = config.training(replay_buffer_config=replay_config)
+config = config.resources(num_gpus=0)
+config = config.env_runners(num_env_runners=1)
+config = config.environment(
         env=FrozenPond,
         # Config dict to be passed to our custom env's constructor.
         env_config={"size": 4},
     )
-    # Parallelize environment rollouts.
-    .env_runners(num_env_runners=3)
-)
 
 # Construct the PPO algorithm object from the config
 algo = config.build()
@@ -51,7 +58,7 @@ for i in range(10):
     print(f"Iter: {i}; avg. rewards={results['env_runners']['episode_return_mean']}")
 
 # call `save()` to create a checkpoint.
-save_result = algo.save('model/model-frozen-pond')
+save_result = algo.save('model/frozen-pond-dqn-model')
 
 path_to_checkpoint = save_result.checkpoint.path
 print(
@@ -63,28 +70,25 @@ env = FrozenPond({"size": 4})
 
 # Get the initial observation (should be: [0.0] for the starting position).
 obs, info = env.reset()
-terminated = truncated = False
+done = False
 total_reward = 0.0
 
 # Play one episode
-while not terminated and not truncated:
-    # Render the step
-    clear_output()
-    env.render()
-    
-    # Make some delay, so it is easier to see
-    time.sleep(1.0)
-    
+while not done:
     # Compute a single action, given the current observation
     # from the environment.
     action = algo.compute_single_action(obs)
     
     # Apply the computed action in the environment.
-    obs, reward, terminated, _, info = env.step(action)
-
+    obs, reward, done, _, info = env.step(action)
+    
+    # Render the step
+    # clear_output()
+    env.render()
+    time.sleep(0.5)
+    
     # sum up rewards for reporting purposes
     total_reward += reward
 
 # Report results.
 print(f"Played 1 episode; total-reward={total_reward}")
-

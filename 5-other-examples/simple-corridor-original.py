@@ -59,7 +59,7 @@ config = (
         env=SimpleCorridor,
         # Config dict to be passed to our custom env's constructor.
         # Use corridor with 20 fields (including S and G).
-        env_config={"corridor_length": 28},
+        env_config={"corridor_length": 20},
     )
     # Parallelize environment rollouts.
     .env_runners(num_env_runners=3)
